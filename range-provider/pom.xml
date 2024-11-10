@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>telran.pulse.monitoring</groupId>
-    <artifactId>pulse-values-analyzer</artifactId>
+    <artifactId>range-provider</artifactId>
     <version>1.0-SNAPSHOT</version>
 
     <properties>
@@ -24,15 +24,10 @@
             <version>3.11.0</version>
         </dependency>
         <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>dynamodb</artifactId>
-            <version>2.28.24</version>
-        </dependency>
-        <dependency>
-          <groupId>org.json</groupId>
-          <artifactId>json</artifactId>
-          <version>20240303</version>
-        </dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+            <version>20240303</version>
+          </dependency>
     </dependencies>
 
     <build>

@@ -13,7 +13,6 @@ Globals:
       Variables:
         LOGGER_LEVEL: FINEST
     
-      
 
 Resources:
   #DynamoDB Streams specification
@@ -36,6 +35,7 @@ Resources:
         WriteCapacityUnits: 5
       StreamSpecification:
           StreamViewType: NEW_IMAGE
+  #DynamoDB Streams specification
   PulseAbnormalValuesStream:
     Type: 'AWS::DynamoDB::Table'
     Properties:
@@ -55,7 +55,7 @@ Resources:
         WriteCapacityUnits: 5
       StreamSpecification:
           StreamViewType: NEW_IMAGE
-         
+  #DynamoDB Streams specification       
   PulseJumpValuesStream:
     Type: 'AWS::DynamoDB::Table'
     Properties:
@@ -75,6 +75,7 @@ Resources:
         WriteCapacityUnits: 5
       StreamSpecification:
           StreamViewType: NEW_IMAGE
+  #DynamoDB Streams specification
   PulseLastValues:
     Type: 'AWS::DynamoDB::Table'
     Properties:
@@ -112,6 +113,17 @@ Resources:
               Filters: 
               - Pattern: '{"eventName": ["INSERT"]}'        
 # Define the publisher Lambda function with permissions
+  RangeProviderFunction:
+    Type: AWS::Serverless::Function 
+    Properties:
+      CodeUri: range-provider
+      Events:
+        GetRange:
+          Type: Api 
+          Properties:
+            Path: /range
+            Method: get
+# Define the publisher Lambda function with permissions
   PulseValuesAnalyzer:
     Type: 'AWS::Serverless::Function'
     Properties:
@@ -124,7 +136,7 @@ Resources:
               - dynamodb:*  
       Environment:
         Variables:
-          BASE_URL:  !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/range"       
+          API_GATEWAY_URL:  !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/range"       
       Events:
         TableRecordChange:
           Type: DynamoDB
@@ -134,3 +146,7 @@ Resources:
             FilterCriteria: 
               Filters: 
               - Pattern: '{"eventName": ["INSERT"]}'      
+Outputs:
+  RangeProviderApi:
+    Description: "API Gateway endpoint URL for Prod stage for Range Provider function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/range"

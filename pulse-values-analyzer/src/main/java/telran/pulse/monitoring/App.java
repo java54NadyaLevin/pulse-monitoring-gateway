@@ -1,8 +1,13 @@
 package telran.pulse.monitoring;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
 import java.util.*;
 import java.util.logging.*;
-
+import org.json.JSONObject;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.AttributeValue;
@@ -10,6 +15,9 @@ import software.amazon.awssdk.services.dynamodb.*;
 import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.PutItemRequest.Builder;
 import static telran.pulse.monitoring.Constants.*;
+record Range(int min, int max) {
+
+}
 
 public class App {
 
@@ -59,10 +67,28 @@ public class App {
 
 	private void processPulseValue(Map<String, AttributeValue> map) {
 		int value = Integer.parseInt(map.get(VALUE_ATTRIBUTE).getN());
-		logger.finer(getLogMessage(map));
-		if (value > MAX_THRESHOLD_PULSE_VALUE || value < MIN_THRESHOLD_PULSE_VALUE) {
-			processAbnormalPulseValue(map);
+		int patientId = Integer.parseInt(map.get(PATIENT_ID_ATTRIBUTE).getN());
+		try {
+			String apiGatewayUrl = System.getenv(API_GATEWAY_URL);
+			new URI(apiGatewayUrl);
+			Range range = getRange(patientId, apiGatewayUrl);
+			if (value > range.max() || value < range.min()) {
+				processAbnormalPulseValue(map);
+			}
+		} catch (Exception e) {
+			
+			logger.warning(e.getMessage());
 		}
+		
+	}
+
+    private Range getRange(int patientId, String apiGatewayUrl) throws Exception{
+		HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder(new URI(apiGatewayUrl 
+		+ "?" + PATIENT_ID_ATTRIBUTE + "=" + Integer.toString(patientId))).build();
+        HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
+        JSONObject jsonObject = new JSONObject(response.body());
+	    return new Range(jsonObject.getInt("min"), jsonObject.getInt("max"));
 	}
 
 	private void processAbnormalPulseValue(Map<String, AttributeValue> map) {
